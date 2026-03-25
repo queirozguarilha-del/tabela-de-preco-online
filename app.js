@@ -678,6 +678,12 @@ app.use((req, _res, next) => {
   }
   next();
 });
+app.use(
+  asyncHandler(async (_req, _res, next) => {
+    await initializeApp();
+    next();
+  })
+);
 
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -1017,7 +1023,6 @@ async function initializeApp() {
   return initPromise;
 }
 
-module.exports = {
-  app,
-  initializeApp,
-};
+module.exports = app;
+module.exports.app = app;
+module.exports.initializeApp = initializeApp;
