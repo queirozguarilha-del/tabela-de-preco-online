@@ -42,33 +42,42 @@ npm start
 
 ### Opcao 1: desenvolvimento local
 
-Sem `DATABASE_URL`, o sistema salva em `data/store.json`.
+Sem `DATABASE_URL` e sem `POSTGRES_URL`, o sistema salva em `data/store.json`.
 
 ### Opcao 2: banco PostgreSQL (recomendado para deploy)
 
-Com `DATABASE_URL`, o sistema usa PostgreSQL e cria as tabelas automaticamente no primeiro start.
+Com `DATABASE_URL` (manual) ou `POSTGRES_URL` (Vercel Postgres), o sistema usa PostgreSQL e cria as tabelas automaticamente no primeiro start.
 
 Variaveis:
 
-- `DATABASE_URL`
+- `DATABASE_URL` (opcional quando usar banco externo, ex: Supabase)
+- `POSTGRES_URL` (criada automaticamente pela integracao Vercel Postgres)
+- `POSTGRES_PRISMA_URL` (tambem aceita)
 - `DATABASE_SSL` (`true` para provedores que exigem SSL, como Supabase Pooler)
 
 Importante:
 
-- Em `production`, se `DATABASE_URL` nao estiver configurada, o servidor nao inicia.
+- Em `production`, se nao houver `DATABASE_URL` nem `POSTGRES_URL`, o servidor nao inicia.
 
-## Deploy Vercel + Supabase
+## Deploy Vercel + PostgreSQL
 
 Esta aplicacao ja esta preparada para:
 
-- Front + API no mesmo projeto Vercel (`api/[...all].js`)
-- Banco PostgreSQL no Supabase
+- Front + API no mesmo projeto Vercel
+- Banco PostgreSQL externo (Supabase) ou Vercel Postgres
 
-### 1. Criar banco no Supabase
+### Caminho recomendado: Vercel Postgres
 
-No projeto Supabase, copie a string de conexao PostgreSQL (recomendado: pooler de transacao).
+1. No projeto da Vercel, acesse `Storage`.
+2. Crie um `Postgres` e conecte ao projeto.
+3. A Vercel cria automaticamente as variaveis `POSTGRES_*`.
+4. Configure somente:
+   - `SESSION_SECRET`
+   - `ADMIN_EMAIL`
+   - `ADMIN_PASSWORD`
+   - SMTP (opcional)
 
-### 2. Configurar variaveis na Vercel
+### Caminho alternativo: Supabase
 
 No projeto da Vercel, configure:
 
@@ -80,7 +89,7 @@ No projeto da Vercel, configure:
 - `ADMIN_PASSWORD`
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` (se quiser notificacao por email)
 
-### 3. Deploy
+### Deploy
 
 Conecte o repositorio no painel da Vercel e faca o deploy.
 Na primeira inicializacao:

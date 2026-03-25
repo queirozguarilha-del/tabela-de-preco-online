@@ -11,7 +11,15 @@ const app = express();
 const PRICE_TYPES = ["NORMAL", "PREMIUM", "SAZONAL"];
 const DATA_DIR = path.join(__dirname, "data");
 const DATA_FILE = path.join(DATA_DIR, "store.json");
-const DATABASE_URL = String(process.env.DATABASE_URL || "").trim();
+const DATABASE_URL =
+  [
+    process.env.DATABASE_URL,
+    process.env.POSTGRES_URL,
+    process.env.POSTGRES_PRISMA_URL,
+    process.env.POSTGRES_URL_NON_POOLING,
+  ]
+    .map((value) => String(value || "").trim())
+    .find(Boolean) || "";
 const IS_PRODUCTION = String(process.env.NODE_ENV || "").toLowerCase() === "production";
 const SESSION_SECRETS = String(process.env.SESSION_SECRET || "troque-esta-chave")
   .split(",")
@@ -529,7 +537,7 @@ function makeRepository() {
   try {
     ({ Pool } = require("pg"));
   } catch (error) {
-    console.error("DATABASE_URL foi configurada, mas o pacote 'pg' nao esta instalado.");
+    console.error("PostgreSQL configurado, mas o pacote 'pg' nao esta instalado.");
     throw error;
   }
 
@@ -1019,7 +1027,7 @@ async function initializeApp() {
 
   initPromise = (async () => {
     if (IS_PRODUCTION && !DATABASE_URL) {
-      throw new Error("DATABASE_URL obrigatoria em producao para persistencia remota.");
+      throw new Error("PostgreSQL obrigatorio em producao (DATABASE_URL ou POSTGRES_URL).");
     }
 
     const adminEmail = normalizeEmail(process.env.ADMIN_EMAIL || "admin@tabela.local");
@@ -1027,7 +1035,7 @@ async function initializeApp() {
     await repository.init({ adminEmail, adminPassword });
 
     if (DATABASE_URL) {
-      console.log("Persistencia: PostgreSQL (DATABASE_URL).");
+      console.log("Persistencia: PostgreSQL.");
     } else {
       console.log("Persistencia: arquivo local data/store.json.");
     }
