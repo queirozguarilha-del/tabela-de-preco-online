@@ -678,12 +678,6 @@ app.use((req, _res, next) => {
   }
   next();
 });
-app.use(
-  asyncHandler(async (_req, _res, next) => {
-    await initializeApp();
-    next();
-  })
-);
 
 app.use(express.static(path.join(__dirname, "public")));
 
