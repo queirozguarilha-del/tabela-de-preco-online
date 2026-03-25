@@ -1,0 +1,43 @@
+{
+  "admins": [
+    {
+      "id": "f87000a1-9af4-457d-9ab2-501d5d7ef015",
+      "email": "admin@tabela.local",
+      "passwordHash": "$2a$10$qVuglfha8QNaU92pZq3WuOtGoa8ZX1K2fTvRgAtoKMJwpKiCNndRS",
+      "createdAt": "2026-03-25T13:10:38.628Z"
+    }
+  ],
+  "clients": [
+    {
+      "id": "7752321d-2396-474c-b447-f6c9a1b6f694",
+      "name": "tes",
+      "email": "teste@gmail.com",
+      "type": "NORMAL",
+      "createdAt": "2026-03-25T13:11:18.326Z"
+    }
+  ],
+  "items": [
+    {
+      "id": "46c15aa3-ebd4-4de9-9205-e1f23f6fc450",
+      "name": "Alface",
+      "prices": {
+        "NORMAL": 5,
+        "PREMIUM": 5.5,
+        "SAZONAL": 6
+      },
+      "createdAt": "2026-03-25T13:11:34.595Z",
+      "updatedAt": "2026-03-25T13:11:34.595Z"
+    },
+    {
+      "id": "64763907-ab87-4f46-89a7-e4e67365895f",
+      "name": "rrr",
+      "prices": {
+        "NORMAL": 5,
+        "PREMIUM": 5,
+        "SAZONAL": 5
+      },
+      "createdAt": "2026-03-25T13:11:41.001Z",
+      "updatedAt": "2026-03-25T13:11:41.001Z"
+    }
+  ]
+}

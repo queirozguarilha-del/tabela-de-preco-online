@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tabela de Preco do Cliente</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="page customer-page">
+      <section class="brand-block">
+        <a id="customer-logo-link" class="brand-link" href="/admin" aria-label="Acesso administrativo">
+          <img src="/logo.png" alt="Logo da empresa" class="brand-logo" />
+        </a>
+      </section>
+
+      <section class="card customer-access-card">
+        <article class="customer-access-visual">
+          <p class="eyebrow">Consulta de Tabela</p>
+          <h1>Sua tabela de preco por email</h1>
+          <p class="subtitle">Digite o email cadastrado para acessar sua tabela personalizada.</p>
+
+          <div class="customer-access-points">
+            <p>Entrada simples: somente email cadastrado</p>
+            <p>Consulta em pagina exclusiva da sua tabela</p>
+            <p>Valores sempre atualizados pela administracao</p>
+          </div>
+        </article>
+
+        <article class="customer-access-form-wrap">
+          <h2>Acessar tabela</h2>
+          <p class="muted">Informe o email usado no cadastro.</p>
+
+          <form id="customer-form" class="stack gap-sm">
+            <label for="customer-email">Email cadastrado</label>
+            <input id="customer-email" name="email" type="email" placeholder="cliente@empresa.com" required />
+            <button type="submit">Entrar na tabela</button>
+          </form>
+
+          <p id="customer-message" class="message"></p>
+        </article>
+      </section>
+    </main>
+
+    <script src="/customer.js" defer></script>
+  </body>
+</html>

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Minha Tabela de Preco</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="page customer-table-page">
+      <section class="brand-block">
+        <a id="customer-logo-link" class="brand-link" href="/admin" aria-label="Acesso administrativo">
+          <img src="/logo.png" alt="Logo da empresa" class="brand-logo" />
+        </a>
+      </section>
+
+      <section class="card customer-table-header">
+        <div class="stack gap-sm">
+          <p class="eyebrow">Acesso do Cliente</p>
+          <h1>Minha tabela de preco</h1>
+          <p id="customer-meta" class="muted"></p>
+        </div>
+        <button id="customer-logout-btn" class="button-ghost" type="button">Trocar email</button>
+      </section>
+
+      <section class="card customer-price-card">
+        <header class="customer-price-head">
+          <div class="stack gap-sm">
+            <h2>Tabela de preco</h2>
+            <p id="customer-search-info" class="muted customer-search-info"></p>
+          </div>
+
+          <div class="customer-search-wrap">
+            <label for="customer-item-search">Buscar item</label>
+            <input
+              id="customer-item-search"
+              type="search"
+              placeholder="Ex.: Alface, Tomate, Rucula"
+              autocomplete="off"
+            />
+          </div>
+        </header>
+
+        <p id="customer-table-message" class="message"></p>
+
+        <div id="customer-table-body" class="customer-price-list"></div>
+      </section>
+    </main>
+
+    <script src="/customer-table.js" defer></script>
+  </body>
+</html>
