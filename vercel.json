@@ -1,0 +1,17 @@
+{
+  "functions": {
+    "api/[...all].js": {
+      "runtime": "nodejs20.x"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/admin",
+      "destination": "/admin.html"
+    },
+    {
+      "source": "/minha-tabela",
+      "destination": "/customer-table.html"
+    }
+  ]
+}

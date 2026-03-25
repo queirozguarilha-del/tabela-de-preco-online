@@ -57,6 +57,37 @@ Importante:
 
 - Em `production`, se `DATABASE_URL` nao estiver configurada, o servidor nao inicia.
 
+## Deploy Vercel + Supabase
+
+Esta aplicacao ja esta preparada para:
+
+- Front + API no mesmo projeto Vercel (`api/[...all].js`)
+- Banco PostgreSQL no Supabase
+
+### 1. Criar banco no Supabase
+
+No projeto Supabase, copie a string de conexao PostgreSQL (recomendado: pooler de transacao).
+
+### 2. Configurar variaveis na Vercel
+
+No projeto da Vercel, configure:
+
+- `DATABASE_URL` (string do Supabase)
+- `DATABASE_SSL=true`
+- `SESSION_SECRET` (chave forte, pode usar mais de uma separada por virgula)
+- `SESSION_COOKIE_NAME` (opcional)
+- `ADMIN_EMAIL`
+- `ADMIN_PASSWORD`
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` (se quiser notificacao por email)
+
+### 3. Deploy
+
+Conecte o repositorio no painel da Vercel e faca o deploy.
+Na primeira inicializacao:
+
+- as tabelas sao criadas automaticamente;
+- o admin inicial e criado se ainda nao existir.
+
 ## Admin inicial
 
 Quando ainda nao existe admin no armazenamento atual (banco ou local), o sistema cria automaticamente um admin com:
