@@ -535,6 +535,21 @@ function makeRepository() {
 
   const useSsl = String(process.env.DATABASE_SSL || "false").toLowerCase() === "true";
   const poolConfig = { connectionString: DATABASE_URL };
+  const poolMax = Number(process.env.PG_POOL_MAX || (IS_PRODUCTION ? 1 : 10));
+  const idleTimeout = Number(process.env.PG_IDLE_TIMEOUT_MS || 10000);
+  const connectTimeout = Number(process.env.PG_CONNECT_TIMEOUT_MS || 10000);
+
+  if (Number.isFinite(poolMax) && poolMax > 0) {
+    poolConfig.max = poolMax;
+  }
+  if (Number.isFinite(idleTimeout) && idleTimeout > 0) {
+    poolConfig.idleTimeoutMillis = idleTimeout;
+  }
+  if (Number.isFinite(connectTimeout) && connectTimeout > 0) {
+    poolConfig.connectionTimeoutMillis = connectTimeout;
+  }
+  poolConfig.keepAlive = true;
+
   if (useSsl) {
     poolConfig.ssl = { rejectUnauthorized: false };
   }
