@@ -630,6 +630,10 @@ function asyncHandler(handler) {
     Promise.resolve(handler(req, res, next)).catch(next);
   };
 }
+const ensureInitialized = asyncHandler(async (_req, _res, next) => {
+  await initializeApp();
+  next();
+});
 
 const requireAdmin = asyncHandler(async (req, res, next) => {
   const adminId = req.session.adminId;
@@ -700,6 +704,9 @@ app.get("/minha-tabela", (_req, res) => {
 app.get("/api/price-types", (_req, res) => {
   res.json({ types: PRICE_TYPES });
 });
+
+app.use("/api/admin", ensureInitialized);
+app.use("/api/customer", ensureInitialized);
 
 app.post(
   "/api/admin/login",
