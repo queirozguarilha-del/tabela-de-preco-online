@@ -16,6 +16,8 @@ const itemForm = document.getElementById("item-form");
 const itemMessage = document.getElementById("item-message");
 const itemsBody = document.getElementById("items-body");
 const priceMessage = document.getElementById("price-message");
+const adminTabButtons = Array.from(document.querySelectorAll("[data-admin-tab]"));
+const adminTabPanels = Array.from(document.querySelectorAll("[data-admin-panel]"));
 
 const PRICE_TYPES = ["NORMAL", "PREMIUM", "SAZONAL"];
 let itemSnapshot = new Map();
@@ -84,6 +86,34 @@ function collectPendingPriceUpdates() {
   return updates;
 }
 
+function setActiveAdminTab(tabId) {
+  if (!adminTabButtons.length || !adminTabPanels.length) {
+    return;
+  }
+
+  const fallback = adminTabButtons[0]?.dataset.adminTab || "";
+  const exists = adminTabButtons.some((button) => button.dataset.adminTab === tabId);
+  const targetTab = exists ? tabId : fallback;
+
+  for (const button of adminTabButtons) {
+    const isActive = button.dataset.adminTab === targetTab;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-selected", isActive ? "true" : "false");
+    button.setAttribute("tabindex", isActive ? "0" : "-1");
+  }
+
+  for (const panel of adminTabPanels) {
+    const isActive = panel.dataset.adminPanel === targetTab;
+    panel.classList.toggle("hidden", !isActive);
+  }
+}
+
+for (const button of adminTabButtons) {
+  button.addEventListener("click", () => {
+    setActiveAdminTab(button.dataset.adminTab);
+  });
+}
+
 async function api(path, options = {}) {
   const response = await fetch(path, {
     credentials: "include",
@@ -105,6 +135,7 @@ function setAuthView(admin) {
   if (!admin) {
     loginCard.classList.remove("hidden");
     dashboard.classList.add("hidden");
+    setActiveAdminTab("prices");
     if (adminCredentialsForm) {
       adminCredentialsForm.reset();
     }
@@ -112,6 +143,7 @@ function setAuthView(admin) {
     return;
   }
   adminLabel.textContent = admin.email;
+  setActiveAdminTab("prices");
   if (adminCredentialsForm) {
     const newEmailInput = adminCredentialsForm.querySelector('input[name="newEmail"]');
     if (newEmailInput) {

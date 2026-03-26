@@ -51,91 +51,151 @@
           <button id="logout-btn" class="button-ghost" type="button">Sair</button>
         </header>
 
-        <section class="card stack gap-sm">
-          <h3>Seguranca do admin</h3>
-          <form id="admin-credentials-form" class="grid-form admin-security-form">
-            <input
-              name="currentPassword"
-              type="password"
-              placeholder="Senha atual"
-              autocomplete="current-password"
-              required
-            />
-            <input name="newEmail" type="email" placeholder="Novo email admin" autocomplete="email" required />
-            <input
-              name="newPassword"
-              type="password"
-              placeholder="Nova senha (min 6)"
-              autocomplete="new-password"
-              required
-            />
-            <button type="submit">Atualizar acesso</button>
-          </form>
-          <p id="admin-credentials-message" class="message"></p>
+        <nav class="card admin-tabs-card" aria-label="Menu do painel admin">
+          <button
+            id="admin-tab-prices"
+            class="admin-tab-btn is-active"
+            data-admin-tab="prices"
+            type="button"
+            role="tab"
+            aria-selected="true"
+            aria-controls="admin-panel-prices"
+          >
+            Itens e precos
+          </button>
+          <button
+            id="admin-tab-clients"
+            class="admin-tab-btn"
+            data-admin-tab="clients"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="admin-panel-clients"
+          >
+            Clientes
+          </button>
+          <button
+            id="admin-tab-security"
+            class="admin-tab-btn"
+            data-admin-tab="security"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="admin-panel-security"
+          >
+            Seguranca
+          </button>
+        </nav>
+
+        <section
+          id="admin-panel-prices"
+          class="admin-tab-panel stack gap-md"
+          data-admin-panel="prices"
+          role="tabpanel"
+          aria-labelledby="admin-tab-prices"
+        >
+          <section class="card stack gap-sm">
+            <h3>Cadastrar item</h3>
+            <form id="item-form" class="grid-form">
+              <input name="name" type="text" placeholder="Nome do item" required />
+              <input name="NORMAL" type="number" min="0" step="0.01" placeholder="Preco NORMAL" required />
+              <input name="PREMIUM" type="number" min="0" step="0.01" placeholder="Preco PREMIUM" required />
+              <input name="SAZONAL" type="number" min="0" step="0.01" placeholder="Preco SAZONAL" required />
+              <button type="submit">Cadastrar item</button>
+            </form>
+            <p id="item-message" class="message"></p>
+          </section>
+
+          <section class="card stack gap-sm">
+            <h3>Itens e precos por tipo</h3>
+            <p class="muted">Qualquer botao de salvar aplica todas as alteracoes pendentes da tabela.</p>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>NORMAL</th>
+                    <th>PREMIUM</th>
+                    <th>SAZONAL</th>
+                    <th>Acoes</th>
+                  </tr>
+                </thead>
+                <tbody id="items-body"></tbody>
+              </table>
+            </div>
+            <p id="price-message" class="message"></p>
+          </section>
         </section>
 
-        <section class="card stack gap-sm">
-          <h3>Cadastrar cliente</h3>
-          <form id="client-form" class="grid-form">
-            <input name="name" type="text" placeholder="Nome do cliente" required />
-            <input name="email" type="email" placeholder="Email do cliente" required />
-            <select name="type" required>
-              <option value="NORMAL">NORMAL</option>
-              <option value="PREMIUM">PREMIUM</option>
-              <option value="SAZONAL">SAZONAL</option>
-            </select>
-            <button type="submit">Cadastrar cliente</button>
-          </form>
-          <p id="client-message" class="message"></p>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Cliente</th>
-                  <th>Email</th>
-                  <th>Tipo</th>
-                  <th>Acoes</th>
-                </tr>
-              </thead>
-              <tbody id="clients-body"></tbody>
-            </table>
-          </div>
+        <section
+          id="admin-panel-clients"
+          class="admin-tab-panel stack gap-md hidden"
+          data-admin-panel="clients"
+          role="tabpanel"
+          aria-labelledby="admin-tab-clients"
+        >
+          <section class="card stack gap-sm">
+            <h3>Cadastrar e editar clientes</h3>
+            <form id="client-form" class="grid-form">
+              <input name="name" type="text" placeholder="Nome do cliente" required />
+              <input name="email" type="email" placeholder="Email do cliente" required />
+              <select name="type" required>
+                <option value="NORMAL">NORMAL</option>
+                <option value="PREMIUM">PREMIUM</option>
+                <option value="SAZONAL">SAZONAL</option>
+              </select>
+              <button type="submit">Cadastrar cliente</button>
+            </form>
+            <p id="client-message" class="message"></p>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Email</th>
+                    <th>Tipo</th>
+                    <th>Acoes</th>
+                  </tr>
+                </thead>
+                <tbody id="clients-body"></tbody>
+              </table>
+            </div>
+          </section>
         </section>
 
-        <section class="card stack gap-sm">
-          <h3>Cadastrar item</h3>
-          <form id="item-form" class="grid-form">
-            <input name="name" type="text" placeholder="Nome do item" required />
-            <input name="NORMAL" type="number" min="0" step="0.01" placeholder="Preco NORMAL" required />
-            <input name="PREMIUM" type="number" min="0" step="0.01" placeholder="Preco PREMIUM" required />
-            <input name="SAZONAL" type="number" min="0" step="0.01" placeholder="Preco SAZONAL" required />
-            <button type="submit">Cadastrar item</button>
-          </form>
-          <p id="item-message" class="message"></p>
-        </section>
-
-        <section class="card stack gap-sm">
-          <h3>Itens e precos por tipo</h3>
-          <p class="muted">Qualquer botao de salvar aplica todas as alteracoes pendentes da tabela.</p>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Item</th>
-                  <th>NORMAL</th>
-                  <th>PREMIUM</th>
-                  <th>SAZONAL</th>
-                  <th>Acoes</th>
-                </tr>
-              </thead>
-              <tbody id="items-body"></tbody>
-            </table>
-          </div>
-          <p id="price-message" class="message"></p>
+        <section
+          id="admin-panel-security"
+          class="admin-tab-panel stack gap-md hidden"
+          data-admin-panel="security"
+          role="tabpanel"
+          aria-labelledby="admin-tab-security"
+        >
+          <section class="card stack gap-sm">
+            <h3>Seguranca do admin</h3>
+            <form id="admin-credentials-form" class="grid-form admin-security-form">
+              <input
+                name="currentPassword"
+                type="password"
+                placeholder="Senha atual"
+                autocomplete="current-password"
+                required
+              />
+              <input name="newEmail" type="email" placeholder="Novo email admin" autocomplete="email" required />
+              <input
+                name="newPassword"
+                type="password"
+                placeholder="Nova senha (min 6)"
+                autocomplete="new-password"
+                required
+              />
+              <button type="submit">Atualizar acesso</button>
+            </form>
+            <p id="admin-credentials-message" class="message"></p>
+          </section>
         </section>
       </section>
     </main>
 
-    <script src="/admin.js?v=20260326b" defer></script>
+    <script src="/admin.js?v=20260326c" defer></script>
   </body>
 </html>

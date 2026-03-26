@@ -255,6 +255,43 @@ tr:last-child td {
   grid-template-columns: repeat(4, minmax(120px, 1fr));
 }
 
+.admin-tabs-card {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  padding: 0.7rem;
+  background: linear-gradient(180deg, #f9fcf8, #edf4ee);
+}
+
+.admin-tab-btn {
+  border: 1px solid #c5d7ca;
+  background: #ffffff;
+  color: #254434;
+  border-radius: 999px;
+  padding: 0.58rem 0.9rem;
+  font-size: 0.86rem;
+  letter-spacing: 0.02em;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.admin-tab-btn:hover {
+  background: #edf7f0;
+  border-color: #9ec4ad;
+}
+
+.admin-tab-btn.is-active {
+  border-color: transparent;
+  background: linear-gradient(135deg, #1c754f, #14563b);
+  color: #ffffff;
+  box-shadow: 0 10px 20px rgba(22, 88, 58, 0.24);
+}
+
+.admin-tab-panel {
+  display: grid;
+  gap: 1rem;
+}
+
 .message {
   min-height: 1.1rem;
   margin: 0;
@@ -586,6 +623,12 @@ tr:last-child td {
   .dashboard-head {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .admin-tabs-card {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 0.8rem;
   }
 
   .customer-table-header {
