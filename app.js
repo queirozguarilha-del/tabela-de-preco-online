@@ -63,6 +63,63 @@ function parsePricePatch(payload) {
   return patch;
 }
 
+function parseBatchPriceUpdates(payload) {
+  const updates = Array.isArray(payload?.updates) ? payload.updates : [];
+  if (updates.length === 0) {
+    throw new Error("Nenhuma alteracao de preco enviada.");
+  }
+
+  const seen = new Set();
+  return updates.map((entry, index) => {
+    const itemId = String(entry?.itemId || entry?.id || "").trim();
+    if (!itemId) {
+      throw new Error(`Item da linha ${index + 1} sem identificador.`);
+    }
+    if (seen.has(itemId)) {
+      throw new Error(`Item duplicado no envio: ${itemId}.`);
+    }
+    seen.add(itemId);
+
+    let patch;
+    try {
+      patch = parsePricePatch(entry?.prices || entry);
+    } catch (error) {
+      throw new Error(`Erro de preco na linha ${index + 1}: ${error.message}`);
+    }
+    if (Object.keys(patch).length === 0) {
+      throw new Error(`Nenhum preco valido para o item da linha ${index + 1}.`);
+    }
+    return { itemId, patch };
+  });
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function resolvePublicAppUrl(req) {
+  const configured = String(process.env.PUBLIC_APP_URL || process.env.APP_BASE_URL || "").trim();
+  if (configured) {
+    return configured.replace(/\/+$/, "");
+  }
+
+  const host = String(req.get("x-forwarded-host") || req.get("host") || "").trim();
+  if (!host) {
+    return "";
+  }
+  const forwardedProto = String(req.get("x-forwarded-proto") || "")
+    .split(",")[0]
+    .trim()
+    .toLowerCase();
+  const protocol = forwardedProto || req.protocol || "https";
+  return `${protocol}://${host}`.replace(/\/+$/, "");
+}
+
 function formatMoney(value) {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -603,40 +660,147 @@ function makeTransporter() {
 
 const transporter = makeTransporter();
 
-async function notifyPriceChange({ itemName, oldPrices, newPrices, changedTypes, clients }) {
+function buildPriceUpdateEmailText({ clientName, when, clientChanges }) {
+  const intro =
+    clientChanges.length === 1
+      ? "Houve atualizacao de preco no item abaixo:"
+      : `Houve atualizacao de preco em ${clientChanges.length} itens:`;
+
+  const lines = [
+    `Ola ${clientName},`,
+    "",
+    intro,
+    "",
+  ];
+
+  for (const [index, change] of clientChanges.entries()) {
+    lines.push(
+      `${index + 1}. ${change.itemName} - de ${formatMoney(change.oldPrice)} para ${formatMoney(change.newPrice)}`
+    );
+  }
+
+  lines.push("");
+  lines.push(`Data da atualizacao: ${when}`);
+  lines.push("");
+  lines.push("Queiroz e Guarilha");
+  lines.push("Se precisar, fale com o administrador.");
+
+  return lines.join("\n");
+}
+
+function buildPriceUpdateEmailHtml({ clientName, when, clientChanges, logoUrl }) {
+  const intro =
+    clientChanges.length === 1
+      ? "Houve atualizacao de preco no item abaixo."
+      : `Houve atualizacao de preco em <strong>${clientChanges.length} itens</strong>.`;
+
+  const rows = clientChanges
+    .map(
+      (change, index) => `
+        <tr style="background:${index % 2 === 0 ? "#f3f7f4" : "#fff8ef"};">
+          <td style="padding:12px 14px;font-size:14px;color:#113628;font-weight:600;">${escapeHtml(change.itemName)}</td>
+          <td style="padding:12px 14px;font-size:14px;color:#5f6b66;">${escapeHtml(formatMoney(change.oldPrice))}</td>
+          <td style="padding:12px 14px;font-size:14px;color:#b05600;font-weight:700;">${escapeHtml(
+            formatMoney(change.newPrice)
+          )}</td>
+        </tr>
+      `
+    )
+    .join("");
+
+  const footerLogo = logoUrl
+    ? `<div style="margin-top:20px;text-align:center;"><img src="${escapeHtml(
+        logoUrl
+      )}" alt="Queiroz e Guarilha" style="max-width:150px;height:auto;display:inline-block;" /></div>`
+    : "";
+
+  return `
+    <!doctype html>
+    <html lang="pt-BR">
+      <body style="margin:0;padding:0;background:#eef1eb;font-family:Arial,Helvetica,sans-serif;color:#23312a;">
+        <div style="max-width:640px;margin:0 auto;padding:22px 14px;">
+          <div style="background:#ffffff;border:1px solid #d7e1da;border-radius:16px;padding:22px;">
+            <h2 style="margin:0 0 8px;font-size:24px;color:#103e2c;">Atualizacao da tabela de preco</h2>
+            <p style="margin:0 0 14px;font-size:15px;line-height:1.45;">Ola <strong>${escapeHtml(
+              clientName
+            )}</strong>, ${intro}</p>
+
+            <table style="width:100%;border-collapse:collapse;border:1px solid #d7e1da;border-radius:12px;overflow:hidden;">
+              <thead>
+                <tr style="background:#1d7347;">
+                  <th align="left" style="padding:12px 14px;color:#ffffff;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;">Item</th>
+                  <th align="left" style="padding:12px 14px;color:#ffffff;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;">Valor anterior</th>
+                  <th align="left" style="padding:12px 14px;color:#ffffff;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;">Novo valor</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+
+            <p style="margin:14px 0 0;font-size:13px;color:#4f5f57;">
+              Data da atualizacao: <strong>${escapeHtml(when)}</strong>
+            </p>
+
+            ${footerLogo}
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+async function notifyPriceChanges({ changes, clients, appBaseUrl }) {
   if (!transporter) {
-    return { skipped: true, sent: 0, failed: 0 };
+    return { skipped: true, sent: 0, failed: 0, targetedClients: 0, changedItems: 0 };
+  }
+  if (!Array.isArray(changes) || changes.length === 0) {
+    return { skipped: false, sent: 0, failed: 0, targetedClients: 0, changedItems: 0 };
   }
   if (!Array.isArray(clients) || clients.length === 0) {
-    return { skipped: false, sent: 0, failed: 0 };
+    return { skipped: false, sent: 0, failed: 0, targetedClients: 0, changedItems: changes.length };
   }
 
   const from = process.env.SMTP_FROM || process.env.SMTP_USER;
   const when = new Date().toLocaleString("pt-BR", { timeZone: resolveTimeZone(process.env.TZ) });
+  const logoUrl = appBaseUrl ? `${appBaseUrl}/logo.png` : "";
   let sent = 0;
   let failed = 0;
+  let targetedClients = 0;
 
   for (const client of clients) {
-    try {
-      const type = client.type;
-      const oldPrice = oldPrices[type];
-      const newPrice = newPrices[type];
-      const text = [
-        `Ola ${client.name},`,
-        "",
-        `Houve atualizacao de preco para o item: ${itemName}`,
-        `Valor anterior: ${formatMoney(oldPrice)}`,
-        `Novo valor: ${formatMoney(newPrice)}`,
-        `Data da alteracao: ${when}`,
-        "",
-        "Se precisar, fale com o administrador.",
-      ].join("\n");
+    const clientChanges = changes
+      .filter((change) => change.changedTypes.includes(client.type))
+      .map((change) => ({
+        itemName: change.itemName,
+        oldPrice: change.oldPrices[client.type],
+        newPrice: change.newPrices[client.type],
+      }));
 
+    if (clientChanges.length === 0) {
+      continue;
+    }
+
+    targetedClients += 1;
+    const subject =
+      clientChanges.length === 1
+        ? `Atualizacao de preco - ${clientChanges[0].itemName}`
+        : `Atualizacao de preco - ${clientChanges.length} itens atualizados`;
+
+    try {
       await transporter.sendMail({
         from,
         to: client.email,
-        subject: `Atualizacao de preco - ${itemName}`,
-        text,
+        subject,
+        text: buildPriceUpdateEmailText({
+          clientName: client.name,
+          when,
+          clientChanges,
+        }),
+        html: buildPriceUpdateEmailHtml({
+          clientName: client.name,
+          when,
+          clientChanges,
+          logoUrl,
+        }),
       });
       sent += 1;
     } catch (error) {
@@ -649,7 +813,8 @@ async function notifyPriceChange({ itemName, oldPrices, newPrices, changedTypes,
     skipped: false,
     sent,
     failed,
-    changedTypes,
+    targetedClients,
+    changedItems: changes.length,
   };
 }
 
@@ -928,6 +1093,85 @@ app.post(
 );
 
 app.put(
+  "/api/admin/items/prices",
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    let updates;
+    try {
+      updates = parseBatchPriceUpdates(req.body);
+    } catch (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    const prepared = [];
+    for (const update of updates) {
+      const item = await repository.getItemById(update.itemId);
+      if (!item) {
+        return res.status(404).json({ error: `Item nao encontrado: ${update.itemId}` });
+      }
+      const oldPrices = normalizePrices(item.prices);
+      prepared.push({
+        itemId: update.itemId,
+        itemName: item.name,
+        oldPrices,
+        nextPrices: { ...oldPrices, ...update.patch },
+      });
+    }
+
+    const updatedItems = [];
+    const changedItems = [];
+    const changedTypesSet = new Set();
+
+    for (const entry of prepared) {
+      const updatedItem = await repository.updateItemPrices({
+        itemId: entry.itemId,
+        prices: entry.nextPrices,
+      });
+
+      if (!updatedItem) {
+        return res.status(404).json({ error: `Item nao encontrado: ${entry.itemId}` });
+      }
+
+      const changedTypes = PRICE_TYPES.filter((type) => entry.oldPrices[type] !== updatedItem.prices[type]);
+      updatedItems.push(updatedItem);
+
+      if (changedTypes.length > 0) {
+        for (const type of changedTypes) {
+          changedTypesSet.add(type);
+        }
+        changedItems.push({
+          itemId: updatedItem.id,
+          itemName: updatedItem.name,
+          oldPrices: entry.oldPrices,
+          newPrices: updatedItem.prices,
+          changedTypes,
+        });
+      }
+    }
+
+    let notifications = { skipped: true, sent: 0, failed: 0, targetedClients: 0, changedItems: 0 };
+    if (changedItems.length > 0) {
+      const impactedClients = await repository.listClientsByTypes([...changedTypesSet]);
+      notifications = await notifyPriceChanges({
+        changes: changedItems,
+        clients: impactedClients,
+        appBaseUrl: resolvePublicAppUrl(req),
+      });
+    }
+
+    res.json({
+      updatedCount: updatedItems.length,
+      changedItems: changedItems.map((item) => ({
+        itemId: item.itemId,
+        itemName: item.itemName,
+        changedTypes: item.changedTypes,
+      })),
+      notifications,
+    });
+  })
+);
+
+app.put(
   "/api/admin/items/:itemId/prices",
   requireAdmin,
   asyncHandler(async (req, res) => {
@@ -953,16 +1197,22 @@ app.put(
     const updatedItem = await repository.updateItemPrices({ itemId, prices: nextPrices });
 
     const changedTypes = PRICE_TYPES.filter((type) => oldPrices[type] !== updatedItem.prices[type]);
-    let notifications = { skipped: true, sent: 0, failed: 0 };
+    let notifications = { skipped: true, sent: 0, failed: 0, targetedClients: 0, changedItems: 0 };
 
     if (changedTypes.length > 0) {
       const impactedClients = await repository.listClientsByTypes(changedTypes);
-      notifications = await notifyPriceChange({
-        itemName: updatedItem.name,
-        oldPrices,
-        newPrices: updatedItem.prices,
-        changedTypes,
+      notifications = await notifyPriceChanges({
+        changes: [
+          {
+            itemId: updatedItem.id,
+            itemName: updatedItem.name,
+            oldPrices,
+            newPrices: updatedItem.prices,
+            changedTypes,
+          },
+        ],
         clients: impactedClients,
+        appBaseUrl: resolvePublicAppUrl(req),
       });
     }
 

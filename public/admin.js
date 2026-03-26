@@ -18,6 +18,7 @@ const itemsBody = document.getElementById("items-body");
 const priceMessage = document.getElementById("price-message");
 
 const PRICE_TYPES = ["NORMAL", "PREMIUM", "SAZONAL"];
+let itemSnapshot = new Map();
 
 function setMessage(element, text, type = "") {
   element.textContent = text || "";
@@ -31,6 +32,56 @@ function escapeHtml(value) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+function toPriceNumber(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    throw new Error("Valor de preco invalido.");
+  }
+  return Number(parsed.toFixed(2));
+}
+
+function buildItemSnapshot(items) {
+  const snapshot = new Map();
+  for (const item of items) {
+    snapshot.set(item.id, {
+      name: item.name,
+      prices: {
+        NORMAL: toPriceNumber(item.prices.NORMAL),
+        PREMIUM: toPriceNumber(item.prices.PREMIUM),
+        SAZONAL: toPriceNumber(item.prices.SAZONAL),
+      },
+    });
+  }
+  return snapshot;
+}
+
+function collectPendingPriceUpdates() {
+  const updates = [];
+
+  for (const [itemId, base] of itemSnapshot.entries()) {
+    const prices = {};
+    let changed = false;
+
+    for (const type of PRICE_TYPES) {
+      const input = itemsBody.querySelector(`input[data-item-id="${itemId}"][data-type="${type}"]`);
+      if (!input) {
+        throw new Error("Falha ao localizar campos de preco.");
+      }
+      const currentValue = toPriceNumber(input.value);
+      prices[type] = currentValue;
+      if (currentValue !== base.prices[type]) {
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      updates.push({ itemId, prices });
+    }
+  }
+
+  return updates;
 }
 
 async function api(path, options = {}) {
@@ -131,7 +182,7 @@ function renderItems(items) {
         <td data-label="NORMAL"><input class="price-input" data-item-id="${item.id}" data-type="NORMAL" type="number" min="0" step="0.01" value="${item.prices.NORMAL}" /></td>
         <td data-label="PREMIUM"><input class="price-input" data-item-id="${item.id}" data-type="PREMIUM" type="number" min="0" step="0.01" value="${item.prices.PREMIUM}" /></td>
         <td data-label="SAZONAL"><input class="price-input" data-item-id="${item.id}" data-type="SAZONAL" type="number" min="0" step="0.01" value="${item.prices.SAZONAL}" /></td>
-        <td data-label="Acoes"><button type="button" data-save-item="${item.id}">Salvar preco</button></td>
+        <td data-label="Acoes"><button type="button" data-save-item="${item.id}">Salvar alteracoes</button></td>
       </tr>
     `
     )
@@ -146,6 +197,7 @@ async function loadClients() {
 async function loadItems() {
   const data = await api("/api/admin/items");
   renderItems(data.items);
+  itemSnapshot = buildItemSnapshot(data.items);
 }
 
 async function loadDashboardData() {
@@ -314,35 +366,35 @@ itemsBody.addEventListener("click", async (event) => {
     return;
   }
 
-  const prices = {};
-  for (const type of PRICE_TYPES) {
-    const input = itemsBody.querySelector(`input[data-item-id="${itemId}"][data-type="${type}"]`);
-    if (!input) {
-      setMessage(priceMessage, "Falha ao localizar campos de preco.", "error");
-      return;
-    }
-    prices[type] = Number(input.value);
+  let updates;
+  try {
+    updates = collectPendingPriceUpdates();
+  } catch (error) {
+    setMessage(priceMessage, error.message, "error");
+    return;
   }
 
-  setMessage(priceMessage, "Salvando preco...");
+  if (updates.length === 0) {
+    setMessage(priceMessage, "Nenhuma alteracao pendente para salvar.", "ok");
+    return;
+  }
+
+  setMessage(priceMessage, `Salvando ${updates.length} item(ns) alterados...`);
   try {
-    const data = await api(`/api/admin/items/${itemId}/prices`, {
+    const data = await api("/api/admin/items/prices", {
       method: "PUT",
-      body: JSON.stringify({ prices }),
+      body: JSON.stringify({ updates }),
     });
     await loadItems();
 
     const sent = data.notifications?.sent || 0;
     const failed = data.notifications?.failed || 0;
-    const changed =
-      Array.isArray(data.changedTypes) && data.changedTypes.length > 0
-        ? data.changedTypes.join(", ")
-        : "nenhum";
+    const changedItems = Array.isArray(data.changedItems) ? data.changedItems.length : 0;
 
     if (data.notifications?.skipped) {
       setMessage(
         priceMessage,
-        `Preco atualizado (${changed}). SMTP nao configurado, sem envio de email.`,
+        `Alteracoes salvas em ${changedItems} item(ns). SMTP nao configurado, sem envio de email.`,
         "ok"
       );
       return;
@@ -350,8 +402,8 @@ itemsBody.addEventListener("click", async (event) => {
 
     setMessage(
       priceMessage,
-      `Preco atualizado (${changed}). Emails enviados: ${sent}. Falhas: ${failed}.`,
-      "ok"
+      `Alteracoes salvas em ${changedItems} item(ns). Emails enviados: ${sent}. Falhas: ${failed}.`,
+      failed > 0 ? "error" : "ok"
     );
   } catch (error) {
     setMessage(priceMessage, error.message, "error");
