@@ -26,6 +26,7 @@ const SESSION_SECRETS = String(process.env.SESSION_SECRET || "troque-esta-chave"
   .map((value) => value.trim())
   .filter(Boolean);
 const SESSION_MAX_AGE = 1000 * 60 * 60 * 8;
+const DEFAULT_EMAIL_TIMEZONE = "America/Sao_Paulo";
 
 let initPromise = null;
 
@@ -67,6 +68,19 @@ function formatMoney(value) {
     style: "currency",
     currency: "BRL",
   }).format(Number(value || 0));
+}
+
+function resolveTimeZone(value) {
+  const candidate = String(value || "").trim();
+  if (!candidate) {
+    return DEFAULT_EMAIL_TIMEZONE;
+  }
+  try {
+    new Intl.DateTimeFormat("pt-BR", { timeZone: candidate }).format(new Date());
+    return candidate;
+  } catch (_error) {
+    return DEFAULT_EMAIL_TIMEZONE;
+  }
 }
 
 function createId() {
@@ -598,7 +612,7 @@ async function notifyPriceChange({ itemName, oldPrices, newPrices, changedTypes,
   }
 
   const from = process.env.SMTP_FROM || process.env.SMTP_USER;
-  const when = new Date().toLocaleString("pt-BR", { timeZone: process.env.TZ || "America/Sao_Paulo" });
+  const when = new Date().toLocaleString("pt-BR", { timeZone: resolveTimeZone(process.env.TZ) });
   let sent = 0;
   let failed = 0;
 
